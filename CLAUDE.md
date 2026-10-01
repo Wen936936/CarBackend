@@ -1,29 +1,27 @@
 # 项目：CarBackend 小车后端
 
 ## 项目背景
-这是小车项目的后端服务，用 Spring Boot 3 开发。
-目前处于起步阶段，目标是提供 REST 接口，供后续对接 rosbridge 和 App。
+Spring Boot 3 后端，对接树莓派 rosbridge，为 App 提供控制接口。
 
 ## 技术栈
-- Java 17
-- Spring Boot 3.x
-- Maven
+- Java 17, Spring Boot 3.x, Maven
+- WebSocket（用于连接 rosbridge）
 
 ## 项目结构
 com.carbackend 包下：
-- controller 包：存放 Web 接口（@RestController）
-- core 包：存放核心逻辑（CarCommand 接口、实现类、异常）
+- controller 包：Web 接口（CarWebController）
+- core 包：核心逻辑（CarCommand 接口、实现类、RosbridgeClient）
+- fakeros 包：本地测试用的假 rosbridge 服务器
 - HelloApplication.java：启动类
 
-## 接口规范
-- 控制接口：GET /car/command?action=xxx
-- 历史接口：GET /car/history
+## 配置文件（application.properties）
+- rosbridge.url=ws://localhost:9090
+- rosbridge.topic.cmd=/cmd_vel
+- rosbridge.topic.camera=/camera/image_raw
+- rosbridge.topic.ptz=/ptz/cmd
 
 ## 编码规范
 - 所有接口加中文注释
 - 使用 HashMap 管理指令映射
-- 未知指令用自定义异常 CarCommandException 处理
-
-## 常用命令
-- 启动：在 IDEA 里运行 HelloApplication
-- 测试：浏览器访问 http://localhost:8080
+- 未知指令用 CarCommandException 处理
+- 连接 rosbridge 的代码必须 try-catch

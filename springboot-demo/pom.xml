@@ -16,6 +16,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <!-- 假 rosbridge 服务器用的 WebSocket 库，独立监听端口，不依赖 Spring 内置容器 -->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.4</version>
+        </dependency>
     </dependencies>
 
     <!-- 添加 Spring Boot 打包插件 -->

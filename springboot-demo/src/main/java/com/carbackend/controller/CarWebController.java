@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +26,13 @@ import java.util.Map;
 @RequestMapping("/car")
 public class CarWebController {
 
+    // 读取配置文件里的 rosbridge 地址
+    @Value("${rosbridge.url}")
+    private String rosbridgeUrl;
+
+    // 读取配置文件里的控制话题
+    @Value("${rosbridge.topic.cmd}")
+    private String cmdTopic;
     // 指令映射表：根据 action 字符串查找对应的指令对象
     private final Map<String, CarCommand> commandMap = new HashMap<>();
 
@@ -83,5 +91,10 @@ public class CarWebController {
     @ExceptionHandler(CarCommandException.class)
     public String handleCarCommandException(CarCommandException e) {
         return e.getMessage();
+    }
+
+    @GetMapping("/config")
+    public String getConfig() {
+        return "rosbridge地址：" + rosbridgeUrl + "，控制话题：" + cmdTopic;
     }
 }
