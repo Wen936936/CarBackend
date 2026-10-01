@@ -5,12 +5,14 @@ import com.carbackend.core.CarCommandException;
 import com.carbackend.core.ForwardCommand;
 import com.carbackend.core.LeftCommand;
 import com.carbackend.core.RightCommand;
+import com.carbackend.core.RosbridgeClient;
 import com.carbackend.core.StopCommand;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
@@ -33,6 +35,11 @@ public class CarWebController {
     // 读取配置文件里的控制话题
     @Value("${rosbridge.topic.cmd}")
     private String cmdTopic;
+
+    // rosbridge 客户端，用于把指令真正发送给小车
+    @Autowired
+    private RosbridgeClient rosbridgeClient;
+
     // 指令映射表：根据 action 字符串查找对应的指令对象
     private final Map<String, CarCommand> commandMap = new HashMap<>();
 
@@ -66,6 +73,12 @@ public class CarWebController {
         }
         // 执行指令
         command.execute();
+        // 将指令转发给 rosbridge，真正控制小车
+        try {
+            rosbridgeClient.sendCommand(action);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
         // 将指令记录到历史列表中
         history.add(action);
         return "指令 " + action + " 执行成功";
