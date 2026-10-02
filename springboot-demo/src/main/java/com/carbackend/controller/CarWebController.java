@@ -1,5 +1,6 @@
 package com.carbackend.controller;
 
+import com.carbackend.core.BackwardCommand;
 import com.carbackend.core.CarCommand;
 import com.carbackend.core.CarCommandException;
 import com.carbackend.core.ForwardCommand;
@@ -54,6 +55,7 @@ public class CarWebController {
         commandMap.put("stop", new StopCommand());
         commandMap.put("left", new LeftCommand());
         commandMap.put("right", new RightCommand());
+        commandMap.put("backward", new BackwardCommand());
     }
 
     /**

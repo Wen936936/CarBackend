@@ -125,6 +125,9 @@ public class RosbridgeClient {
             case "right":
                 msg = buildCmdJson(0, -0.5);
                 break;
+            case "backward":
+                msg = buildCmdJson(-0.5, 0);
+                break;
             default:
                 // 未知指令，交给统一异常处理
                 throw new CarCommandException("未知指令：" + action);
