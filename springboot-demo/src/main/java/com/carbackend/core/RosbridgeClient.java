@@ -1,8 +1,12 @@
 package com.carbackend.core;
 
+import com.carbackend.controller.CameraWebSocketController;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -32,8 +36,15 @@ public class RosbridgeClient {
     // 重连间隔时间（毫秒）
     private static final int RECONNECT_INTERVAL = 3000;
 
+    // 用于解析 rosbridge 推送的 JSON 消息
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     // 真正干活的 WebSocket 客户端对象
     private WebSocketClient client;
+
+    // 摄像头 WebSocket 控制器，收到摄像头话题消息时转发给 App 端
+    @Autowired
+    private CameraWebSocketController cameraWebSocketController;
 
     /**
      * 项目启动时自动连接 rosbridge
@@ -60,6 +71,17 @@ public class RosbridgeClient {
                 public void onMessage(String message) {
                     // 收到摄像头等话题推送的消息，打印日志
                     System.out.println("【收到rosbridge消息】" + message);
+                    // 如果是摄像头话题的消息，把图像转发给已连接的 App 端
+                    try {
+                        JsonNode node = OBJECT_MAPPER.readTree(message);
+                        String topic = node.path("topic").asText("");
+                        if (cameraTopic.equals(topic)) {
+                            String imageBase64 = node.path("msg").asText("");
+                            cameraWebSocketController.broadcastImage(imageBase64);
+                        }
+                    } catch (Exception e) {
+                        System.out.println("【解析rosbridge消息失败】" + e.getMessage());
+                    }
                 }
 
                 @Override

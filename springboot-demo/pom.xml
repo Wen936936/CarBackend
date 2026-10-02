@@ -22,6 +22,11 @@
             <artifactId>Java-WebSocket</artifactId>
             <version>1.5.4</version>
         </dependency>
+        <!-- Spring 内置 WebSocket 支持，用于向 App 端暴露 /ws/camera 端点 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
     </dependencies>
 
     <!-- 添加 Spring Boot 打包插件 -->

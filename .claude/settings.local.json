@@ -3,7 +3,20 @@
     "allow": [
       "Bash(mvn -q -o compile)",
       "Bash(mvn -q compile)",
-      "Bash(java -version)"
+      "Bash(java -version)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(python *)",
+      "Bash(mvn -q -pl springboot-demo -am compile)",
+      "Read(//c/Users/83588/.m2/repository/**)",
+      "Read(//c/Users/83588/AppData/Local/JetBrains/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/83588/AppData/Roaming/**)",
+      "Read(//c/Users/83588/**)",
+      "Bash(netstat -ano)",
+      "Bash(curl *)",
+      "Bash(wmic process *)",
+      "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter \\\\\"ProcessId=24876\\\\\"\\).CommandLine\")",
+      "Bash(jobs -l)"
     ]
   }
 }

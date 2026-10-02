@@ -4,7 +4,10 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.util.Base64;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -12,7 +15,7 @@ import java.util.TimerTask;
  * 假的 rosbridge 服务器，仅用于本地测试
  * 监听 9090 端口，模拟 rosbridge 的 WebSocket 行为：
  * 1. 收到客户端消息时打印到控制台
- * 2. 每 2 秒主动推送一条假的图像消息
+ * 2. 每 2 秒读取本地测试图片，编码成 Base64 后推送给客户端
  */
 public class FakeRosbridgeServer extends WebSocketServer {
 
@@ -65,18 +68,41 @@ public class FakeRosbridgeServer extends WebSocketServer {
     }
 
     /**
-     * 启动定时任务：每 2 秒向所有已连接客户端推送一条假的图像消息
+     * 从 classpath 读取本地测试图片（src/main/resources/test.jpg），编码成 Base64 字符串
+     * 读取失败时返回 null，避免影响服务器其他功能
+     */
+    private String loadImageBase64() {
+        try (InputStream in = FakeRosbridgeServer.class.getResourceAsStream("/test.jpg")) {
+            if (in == null) {
+                System.out.println("【读取测试图片失败】未找到 test.jpg，请放到 src/main/resources/test.jpg");
+                return null;
+            }
+            byte[] imageBytes = in.readAllBytes();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (IOException e) {
+            System.out.println("【读取测试图片异常】" + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 启动定时任务：每 2 秒向所有已连接客户端推送一条包含真实图片 Base64 数据的消息
      */
     private void startFakeImagePush() {
+        String imageBase64 = loadImageBase64();
+        if (imageBase64 == null) {
+            System.out.println("【假图像推送未启动】图片加载失败");
+            return;
+        }
+        String imageMsg = "{\"op\":\"publish\",\"topic\":\"/camera/image_raw\",\"msg\":\"" + imageBase64 + "\"}";
         Timer timer = new Timer(true);
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                String fakeImageMsg = "{\"op\":\"publish\",\"topic\":\"/camera/image_raw\",\"msg\":\"fake_image\"}";
                 try {
-                    broadcast(fakeImageMsg);
+                    broadcast(imageMsg);
                 } catch (Exception e) {
-                    System.out.println("【推送假图像消息失败】" + e.getMessage());
+                    System.out.println("【推送图像消息失败】" + e.getMessage());
                 }
             }
         }, 2000, 2000);
