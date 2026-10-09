@@ -10,6 +10,7 @@ import com.carbackend.core.RosbridgeClient;
 import com.carbackend.core.StopCommand;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -111,5 +112,28 @@ public class CarWebController {
     @GetMapping("/config")
     public String getConfig() {
         return "rosbridge地址：" + rosbridgeUrl + "，控制话题：" + cmdTopic;
+    }
+
+    /**
+     * 云台转向接口：POST /car/ptz
+     * 接收画面坐标百分比（x、y 均为 0~100），转发给 rosbridge 控制云台
+     *
+     * @param x 画面横向百分比（0~100）
+     * @param y 画面纵向百分比（0~100）
+     * @return 执行结果提示
+     */
+    @PostMapping("/ptz")
+    public String ptz(@RequestParam("x") double x, @RequestParam("y") double y) {
+        // 参数范围校验，超出 0~100 视为非法指令
+        if (x < 0 || x > 100 || y < 0 || y > 100) {
+            throw new CarCommandException("非法的云台坐标：x=" + x + ", y=" + y);
+        }
+        // 将坐标转发给 rosbridge，真正控制云台
+        try {
+            rosbridgeClient.sendPtz(x, y);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "指令 ptz 执行成功";
     }
 }

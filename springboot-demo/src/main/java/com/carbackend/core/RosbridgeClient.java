@@ -33,6 +33,10 @@ public class RosbridgeClient {
     @Value("${rosbridge.topic.camera}")
     private String cameraTopic;
 
+    // 云台控制话题，例如 /ptz/cmd
+    @Value("${rosbridge.topic.ptz}")
+    private String ptzTopic;
+
     // 重连间隔时间（毫秒）
     private static final int RECONNECT_INTERVAL = 3000;
 
@@ -163,6 +167,21 @@ public class RosbridgeClient {
     private String buildCmdJson(double linearX, double angularZ) {
         return "{\"op\":\"publish\",\"topic\":\"" + cmdTopic + "\",\"msg\":{\"linear\":{\"x\":" + linearX
                 + "},\"angular\":{\"z\":" + angularZ + "}}}";
+    }
+
+    /**
+     * 发送云台转向指令
+     * 将 App 传来的 0~100 画面百分比坐标，线性映射为 -90~+90 度，发布到 ptz 话题
+     *
+     * @param x 画面横向百分比（0~100）
+     * @param y 画面纵向百分比（0~100）
+     */
+    public void sendPtz(double x, double y) {
+        double pan = (x - 50) * 1.8;
+        double tilt = (y - 50) * 1.8;
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + ptzTopic + "\",\"msg\":{\"pan\":" + pan
+                + ",\"tilt\":" + tilt + "}}";
+        send(msg);
     }
 
     /**
