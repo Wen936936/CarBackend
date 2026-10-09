@@ -16,7 +16,9 @@
       "Bash(curl *)",
       "Bash(wmic process *)",
       "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter \\\\\"ProcessId=24876\\\\\"\\).CommandLine\")",
-      "Bash(jobs -l)"
+      "Bash(jobs -l)",
+      "Bash(powershell -Command \"Get-Content -Encoding Byte -TotalCount 50 'springboot-demo/src/main/resources/application.properties'\")",
+      "Bash(./mvnw.cmd -q compile)"
     ]
   }
 }

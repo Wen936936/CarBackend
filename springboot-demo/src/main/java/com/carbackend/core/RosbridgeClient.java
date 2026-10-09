@@ -37,6 +37,14 @@ public class RosbridgeClient {
     @Value("${rosbridge.topic.ptz}")
     private String ptzTopic;
 
+    // LED/流水灯控制话题，例如 /led/cmd
+    @Value("${rosbridge.topic.led}")
+    private String ledTopic;
+
+    // 喇叭控制话题，例如 /buzzer/cmd
+    @Value("${rosbridge.topic.buzzer}")
+    private String buzzerTopic;
+
     // 重连间隔时间（毫秒）
     private static final int RECONNECT_INTERVAL = 3000;
 
@@ -181,6 +189,39 @@ public class RosbridgeClient {
         double tilt = (y - 50) * 1.8;
         String msg = "{\"op\":\"publish\",\"topic\":\"" + ptzTopic + "\",\"msg\":{\"pan\":" + pan
                 + ",\"tilt\":" + tilt + "}}";
+        send(msg);
+    }
+
+    /**
+     * 发送 LED 颜色指令
+     * 将颜色名（red/green/blue/white/off）发布到 LED 话题
+     *
+     * @param color 颜色名称
+     */
+    public void sendLedColor(String color) {
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + ledTopic + "\",\"msg\":{\"color\":\"" + color + "\"}}";
+        send(msg);
+    }
+
+    /**
+     * 发送 LED 模式指令
+     * 将模式名（flow/static/blink）发布到 LED 话题
+     *
+     * @param mode 模式名称
+     */
+    public void sendLedMode(String mode) {
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + ledTopic + "\",\"msg\":{\"mode\":\"" + mode + "\"}}";
+        send(msg);
+    }
+
+    /**
+     * 发送喇叭指令
+     * 将动作名（on/off）发布到喇叭话题
+     *
+     * @param action 动作名称
+     */
+    public void sendBuzzer(String action) {
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + buzzerTopic + "\",\"msg\":{\"action\":\"" + action + "\"}}";
         send(msg);
     }
 

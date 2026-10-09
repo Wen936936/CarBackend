@@ -114,6 +114,81 @@ public class CarWebController {
         return "rosbridge地址：" + rosbridgeUrl + "，控制话题：" + cmdTopic;
     }
 
+    // LED 合法颜色集合
+    private static final List<String> LED_COLORS = List.of("red", "green", "blue", "white", "off");
+
+    // LED 合法模式集合
+    private static final List<String> LED_MODES = List.of("flow", "static", "blink");
+
+    // 喇叭合法动作集合
+    private static final List<String> BUZZER_ACTIONS = List.of("on", "off");
+
+    /**
+     * LED 颜色控制接口：POST /car/led?color=xxx
+     * 接收颜色名称（red/green/blue/white/off），转发给 rosbridge 控制 LED
+     *
+     * @param color 颜色名称
+     * @return 执行结果提示
+     */
+    @PostMapping("/led")
+    public String led(@RequestParam("color") String color) {
+        // 未知颜色直接抛出自定义异常
+        if (!LED_COLORS.contains(color)) {
+            throw new CarCommandException("未知的LED颜色：" + color);
+        }
+        // 转发给 rosbridge，真正控制 LED
+        try {
+            rosbridgeClient.sendLedColor(color);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "指令 led=" + color + " 执行成功";
+    }
+
+    /**
+     * LED 模式控制接口：POST /car/led/mode?mode=xxx
+     * 接收模式名称（flow/static/blink），转发给 rosbridge 控制 LED
+     *
+     * @param mode 模式名称
+     * @return 执行结果提示
+     */
+    @PostMapping("/led/mode")
+    public String ledMode(@RequestParam("mode") String mode) {
+        // 未知模式直接抛出自定义异常
+        if (!LED_MODES.contains(mode)) {
+            throw new CarCommandException("未知的LED模式：" + mode);
+        }
+        // 转发给 rosbridge，真正控制 LED
+        try {
+            rosbridgeClient.sendLedMode(mode);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "指令 led/mode=" + mode + " 执行成功";
+    }
+
+    /**
+     * 喇叭控制接口：POST /car/buzzer?action=xxx
+     * 接收动作名称（on/off），转发给 rosbridge 控制喇叭
+     *
+     * @param action 动作名称
+     * @return 执行结果提示
+     */
+    @PostMapping("/buzzer")
+    public String buzzer(@RequestParam("action") String action) {
+        // 未知动作直接抛出自定义异常
+        if (!BUZZER_ACTIONS.contains(action)) {
+            throw new CarCommandException("未知的喇叭动作：" + action);
+        }
+        // 转发给 rosbridge，真正控制喇叭
+        try {
+            rosbridgeClient.sendBuzzer(action);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "指令 buzzer=" + action + " 执行成功";
+    }
+
     /**
      * 云台转向接口：POST /car/ptz
      * 接收画面坐标百分比（x、y 均为 0~100），转发给 rosbridge 控制云台
