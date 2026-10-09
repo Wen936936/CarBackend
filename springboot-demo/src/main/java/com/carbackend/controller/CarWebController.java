@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -109,6 +110,17 @@ public class CarWebController {
         return e.getMessage();
     }
 
+    /**
+     * 捕获参数类型不匹配异常（例如 enabled 传了 true/false 以外的值），返回提示信息
+     *
+     * @param e 参数类型不匹配异常
+     * @return 异常提示信息
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public String handleTypeMismatch(MethodArgumentTypeMismatchException e) {
+        return "参数 " + e.getName() + " 非法：" + e.getValue();
+    }
+
     @GetMapping("/config")
     public String getConfig() {
         return "rosbridge地址：" + rosbridgeUrl + "，控制话题：" + cmdTopic;
@@ -187,6 +199,24 @@ public class CarWebController {
             System.out.println("【转发rosbridge失败】" + e.getMessage());
         }
         return "指令 buzzer=" + action + " 执行成功";
+    }
+
+    /**
+     * 图像处理开关接口：POST /car/image/process?enabled=true
+     * 接收开关状态（true/false），转发给 rosbridge 控制 YOLO/OpenCV 图像处理是否开启
+     *
+     * @param enabled 是否开启图像处理
+     * @return 执行结果提示
+     */
+    @PostMapping("/image/process")
+    public String imageProcess(@RequestParam("enabled") boolean enabled) {
+        // 转发给 rosbridge，真正控制图像处理开关
+        try {
+            rosbridgeClient.sendImageProcess(enabled);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "指令 image/process=" + enabled + " 执行成功";
     }
 
     /**

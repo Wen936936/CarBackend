@@ -45,6 +45,10 @@ public class RosbridgeClient {
     @Value("${rosbridge.topic.buzzer}")
     private String buzzerTopic;
 
+    // 图像处理开关话题，例如 /image/process
+    @Value("${rosbridge.topic.image_process}")
+    private String imageProcessTopic;
+
     // 重连间隔时间（毫秒）
     private static final int RECONNECT_INTERVAL = 3000;
 
@@ -222,6 +226,18 @@ public class RosbridgeClient {
      */
     public void sendBuzzer(String action) {
         String msg = "{\"op\":\"publish\",\"topic\":\"" + buzzerTopic + "\",\"msg\":{\"action\":\"" + action + "\"}}";
+        send(msg);
+    }
+
+    /**
+     * 发送图像处理开关指令
+     * 将开关状态（true/false）发布到图像处理话题，控制 YOLO/OpenCV 是否处理画面
+     *
+     * @param enabled 是否开启图像处理
+     */
+    public void sendImageProcess(boolean enabled) {
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + imageProcessTopic
+                + "\",\"msg\":{\"enabled\":" + enabled + "}}";
         send(msg);
     }
 

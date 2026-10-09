@@ -18,7 +18,10 @@
       "Bash(powershell -NoProfile -Command \"\\(Get-CimInstance Win32_Process -Filter \\\\\"ProcessId=24876\\\\\"\\).CommandLine\")",
       "Bash(jobs -l)",
       "Bash(powershell -Command \"Get-Content -Encoding Byte -TotalCount 50 'springboot-demo/src/main/resources/application.properties'\")",
-      "Bash(./mvnw.cmd -q compile)"
+      "Bash(./mvnw.cmd -q compile)",
+      "Bash(xxd application.properties)",
+      "Bash(echo \"--- m2 exists? $?\")",
+      "Bash(unzip -l /c/Users/83588/.m2/repository/org/springframework/spring-web/6.1.14/spring-web-6.1.14.jar)"
     ]
   }
 }
