@@ -29,7 +29,9 @@
       "WebSearch",
       "WebFetch(domain:repo1.maven.org)",
       "Bash(unzip -o -q javacv-1.5.11.jar \"org/bytedeco/javacv/Frame.class\" -d /tmp/jv)",
-      "Bash(javap -cp /tmp/jv org.bytedeco.javacv.Frame)"
+      "Bash(javap -cp /tmp/jv org.bytedeco.javacv.Frame)",
+      "Bash(javac -version)",
+      "Bash(echo \"=== exit: $? ===\")"
     ]
   }
 }
