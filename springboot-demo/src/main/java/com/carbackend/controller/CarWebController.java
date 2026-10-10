@@ -304,4 +304,68 @@ public class CarWebController {
         // TODO 待负责人提供 STM32 归位接口后，在此补上真实归位逻辑
         return "机械臂归位指令已发送（模拟）";
     }
+
+    // 假地图图片路径，纯模拟阶段用；图片不存在时自动退化为 8x8 数组
+    private static final String FAKE_MAP_PATH = "src/main/resources/fake_map.png";
+
+    // 假地图的边长（模拟 8x8 的 OccupancyGrid，0=空地，100=障碍物）
+    private static final int FAKE_MAP_SIZE = 8;
+
+    /**
+     * 地图接口：GET /car/map
+     * 纯模拟阶段不连真机，直接返回一张假地图：
+     * 若 resources 下存在 fake_map.png，则把图片转成 Base64 返回；否则返回 8x8 二维数组模拟 OccupancyGrid，
+     * 数组按行优先排列（下标 = y * 8 + x），障碍物画成"边框 + 十字"，方便 App 端看清效果
+     *
+     * @return 地图数据，格式 {"width":8, "height":8, "data":[0,0,...]} 或 {"width":..., "height":..., "image":"base64..."}
+     */
+    @GetMapping("/map")
+    public Map<String, Object> map() {
+        Map<String, Object> result = new HashMap<>();
+        // 先尝试读取本地假地图图片
+        java.io.File file = new java.io.File(FAKE_MAP_PATH);
+        if (file.exists()) {
+            try {
+                // 图片转 Base64，方便 App 直接解码显示
+                byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+                String base64 = java.util.Base64.getEncoder().encodeToString(bytes);
+                result.put("width", FAKE_MAP_SIZE);
+                result.put("height", FAKE_MAP_SIZE);
+                result.put("image", base64);
+                return result;
+            } catch (Exception e) {
+                // 读图失败时不报错，继续走下面的数组兜底
+                System.out.println("【读取假地图图片失败】" + e.getMessage());
+            }
+        }
+        // 没有图片时，生成 8x8 的假 OccupancyGrid：最外圈当墙，第 4 行和第 4 列当十字隔断，
+        // 剩下 4 个矩形空房间（合计 25 格空地），App 端一眼就能看出障碍物轮廓
+        List<Integer> data = new ArrayList<>();
+        for (int y = 0; y < FAKE_MAP_SIZE; y++) {
+            for (int x = 0; x < FAKE_MAP_SIZE; x++) {
+                boolean isBorder = (x == 0 || x == FAKE_MAP_SIZE - 1
+                        || y == 0 || y == FAKE_MAP_SIZE - 1);
+                boolean isCross = (x == 4 || y == 4);
+                data.add(isBorder || isCross ? 100 : 0);
+            }
+        }
+        result.put("width", FAKE_MAP_SIZE);
+        result.put("height", FAKE_MAP_SIZE);
+        result.put("data", data);
+        return result;
+    }
+
+    /**
+     * 导航目标点接口：POST /car/nav/goal?x=1&y=2
+     * 占位实现：nav2 由负责人部署后再补真实转发逻辑，当前仅返回提示
+     *
+     * @param x 目标点在地图上的横坐标
+     * @param y 目标点在地图上的纵坐标
+     * @return 占位提示
+     */
+    @PostMapping("/nav/goal")
+    public String navGoal(@RequestParam("x") double x, @RequestParam("y") double y) {
+        // TODO 待负责人部署 nav2 后，在此把目标点发布到 goalTopic（配置项 rosbridge.topic.goal）
+        return "导航功能开发中，目标点：(" + x + ", " + y + ")";
+    }
 }

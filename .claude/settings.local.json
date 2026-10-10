@@ -31,7 +31,11 @@
       "Bash(unzip -o -q javacv-1.5.11.jar \"org/bytedeco/javacv/Frame.class\" -d /tmp/jv)",
       "Bash(javap -cp /tmp/jv org.bytedeco.javacv.Frame)",
       "Bash(javac -version)",
-      "Bash(echo \"=== exit: $? ===\")"
+      "Bash(echo \"=== exit: $? ===\")",
+      "Bash(xxd)",
+      "Bash(javap -p -c target/classes/com/carbackend/controller/CarWebController.class)",
+      "Bash(ls .mvn .mvn/wrapper)",
+      "Bash(ls mvnw* springboot-demo/mvnw*)"
     ]
   }
 }
