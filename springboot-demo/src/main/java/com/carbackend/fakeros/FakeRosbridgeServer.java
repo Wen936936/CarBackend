@@ -10,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.util.Base64;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 假的 rosbridge 服务器，仅用于本地测试
@@ -41,10 +43,60 @@ public class FakeRosbridgeServer extends WebSocketServer {
 
     /**
      * 收到客户端发来的指令时触发，打印到控制台
+     * 如果消息是发往 /ai/input 的，则延迟 1 秒模拟 AI 回复，推送到 /ai/reply
      */
     @Override
     public void onMessage(WebSocket conn, String message) {
         System.out.println("【收到指令】" + message);
+        if (message.contains("/ai/input")) {
+            replyAiMessage(conn, message);
+        }
+    }
+
+    /**
+     * 模拟 AI 回复：延迟 1 秒后向客户端推送 /ai/reply 消息
+     * 消息格式：{"op":"publish","topic":"/ai/reply","msg":{"text":"收到：<用户文字>","action":""}}
+     */
+    private void replyAiMessage(WebSocket conn, String message) {
+        try {
+            // 从客户端消息中取出用户发来的文字
+            String userText = extractUserText(message);
+            String reply = "{\"op\":\"publish\",\"topic\":\"/ai/reply\",\"msg\":{\"text\":\"收到："
+                    + escapeJson(userText) + "\",\"action\":\"\"}}";
+            // 延迟 1 秒后用 Timer 单独执行，避免阻塞 WebSocket 的接收线程
+            new Timer(true).schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    try {
+                        conn.send(reply);
+                        System.out.println("【AI回复】" + reply);
+                    } catch (Exception e) {
+                        System.out.println("【AI回复发送失败】" + e.getMessage());
+                    }
+                }
+            }, 1000);
+        } catch (Exception e) {
+            System.out.println("【AI回复处理失败】" + e.getMessage());
+        }
+    }
+
+    /**
+     * 从客户端发来的 /ai/input 消息里取出 text 字段的内容
+     * 取不到时返回原消息，保证回复内容不为空
+     */
+    private String extractUserText(String message) {
+        Matcher matcher = Pattern.compile("\"text\"\\s*:\\s*\"(.*?)\"").matcher(message);
+        return matcher.find() ? matcher.group(1) : message;
+    }
+
+    /**
+     * 转义 JSON 字符串中的特殊字符，避免用户文字里的引号破坏 JSON 结构
+     */
+    private String escapeJson(String text) {
+        return text.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 
     /**

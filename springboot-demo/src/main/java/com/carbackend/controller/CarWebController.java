@@ -273,6 +273,27 @@ public class CarWebController {
     }
 
     /**
+     * AI 对话接口：POST /car/ai/chat
+     * 接收用户文字（必填）和图片的 Base64（可选），转发给 rosbridge 发布到 AI 输入话题，
+     * 由树莓派上的 voice-chatbot 节点处理后，回复经 /ws/chat 推送给 App
+     *
+     * @param text  用户输入的文字
+     * @param image 图片的 Base64 字符串，可选，不传时为空字符串
+     * @return 执行结果提示
+     */
+    @PostMapping("/ai/chat")
+    public String aiChat(@RequestParam("text") String text,
+                         @RequestParam(value = "image", required = false, defaultValue = "") String image) {
+        // 转发给 rosbridge，真正的 AI 处理在树莓派侧完成
+        try {
+            rosbridgeClient.sendAiText(text, image);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "AI 请求已发送";
+    }
+
+    /**
      * 机械臂归位接口：POST /car/arm/reset
      * 占位实现：STM32 归位接口由负责人后续提供，当前仅返回模拟提示，不做真实逻辑
      *

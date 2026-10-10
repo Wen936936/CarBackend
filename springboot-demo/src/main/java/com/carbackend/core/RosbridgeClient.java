@@ -1,8 +1,12 @@
 package com.carbackend.core;
 
+import com.carbackend.controller.ChatWebSocketController;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -48,11 +52,26 @@ public class RosbridgeClient {
     @Value("${rosbridge.topic.image_process}")
     private String imageProcessTopic;
 
+    // AI 对话输入话题（模拟阶段为占位符 /ai/input，实机测试时替换）
+    @Value("${rosbridge.topic.ai.input}")
+    private String aiInputTopic;
+
+    // AI 对话回复话题（模拟阶段为占位符 /ai/reply，实机测试时替换）
+    @Value("${rosbridge.topic.ai.reply}")
+    private String aiReplyTopic;
+
     // 重连间隔时间（毫秒）
     private static final int RECONNECT_INTERVAL = 3000;
 
     // 真正干活的 WebSocket 客户端对象
     private WebSocketClient client;
+
+    // 解析 rosbridge 推送的 JSON，用于按话题分发消息
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    // 收到 AI 回复后交给它推送给 App
+    @Autowired
+    private ChatWebSocketController chatWebSocketController;
 
     /**
      * 项目启动时自动连接 rosbridge
@@ -71,13 +90,19 @@ public class RosbridgeClient {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
                     System.out.println("【rosbridge连接成功】" + rosbridgeUrl);
+                    // 每次连接成功（含断线重连）都重新订阅 AI 回复话题
+                    subscribeAiReply();
                 }
 
                 @Override
                 public void onMessage(String message) {
-                    // 收到 rosbridge 推送的消息，打印日志即可
+                    // AI 回复话题的消息转发给 App，其余消息仅打印日志
                     // 图像不再从这里转发，改由 RtspStreamService 拉 RTSP 流
-                    System.out.println("【收到rosbridge消息】" + message);
+                    if (isAiReply(message)) {
+                        chatWebSocketController.broadcastMessage(message);
+                    } else {
+                        System.out.println("【收到rosbridge消息】" + message);
+                    }
                 }
 
                 @Override
@@ -229,6 +254,69 @@ public class RosbridgeClient {
         String msg = "{\"op\":\"publish\",\"topic\":\"" + imageProcessTopic
                 + "\",\"msg\":{\"enabled\":" + enabled + "}}";
         send(msg);
+    }
+
+    /**
+     * 发送 AI 对话文本（可选带图片）
+     * 将文字和图片的 Base64 发布到 AI 输入话题，由树莓派上的 voice-chatbot 节点处理
+     *
+     * @param text        用户输入的文字
+     * @param base64Image 图片的 Base64 字符串，没有图片时传空字符串
+     */
+    public void sendAiText(String text, String base64Image) {
+        // image 允许为空，为空时补空字符串，保证 JSON 字段始终存在
+        String image = (base64Image == null) ? "" : base64Image;
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + aiInputTopic
+                + "\",\"msg\":{\"text\":\"" + escapeJson(text)
+                + "\",\"image\":\"" + escapeJson(image) + "\"}}";
+        send(msg);
+        System.out.println("【发送AI请求】topic=" + aiInputTopic + "，text=" + text
+                + "，image长度=" + image.length());
+    }
+
+    /**
+     * 订阅 AI 回复话题
+     * 连接成功时调用，之后 rosbridge 收到 voice-chatbot 的回复会主动推送过来
+     */
+    public void subscribeAiReply() {
+        String msg = "{\"op\":\"subscribe\",\"topic\":\"" + aiReplyTopic + "\"}";
+        send(msg);
+        System.out.println("【订阅AI回复话题】" + aiReplyTopic);
+    }
+
+    /**
+     * 判断一条 rosbridge 消息是否来自 AI 回复话题
+     * 只处理 publish 类型且 topic 匹配的消息，解析失败一律返回 false，不影响其他消息
+     *
+     * @param message rosbridge 推送的原始 JSON
+     * @return 是 AI 回复返回 true，否则返回 false
+     */
+    private boolean isAiReply(String message) {
+        try {
+            JsonNode node = objectMapper.readTree(message);
+            return "publish".equals(node.path("op").asText())
+                    && aiReplyTopic.equals(node.path("topic").asText());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * 转义 JSON 字符串里的特殊字符
+     * text 来自 App 输入，含引号、反斜杠或换行时会拼出非法 JSON，必须转义
+     *
+     * @param value 原始字符串
+     * @return 可安全嵌入 JSON 的字符串
+     */
+    private String escapeJson(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 
     /**
