@@ -21,7 +21,15 @@
       "Bash(./mvnw.cmd -q compile)",
       "Bash(xxd application.properties)",
       "Bash(echo \"--- m2 exists? $?\")",
-      "Bash(unzip -l /c/Users/83588/.m2/repository/org/springframework/spring-web/6.1.14/spring-web-6.1.14.jar)"
+      "Bash(unzip -l /c/Users/83588/.m2/repository/org/springframework/spring-web/6.1.14/spring-web-6.1.14.jar)",
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "Bash(mkdir -p /tmp/roscar/repo)",
+      "Bash(echo hi *)",
+      "WebSearch",
+      "WebFetch(domain:repo1.maven.org)",
+      "Bash(unzip -o -q javacv-1.5.11.jar \"org/bytedeco/javacv/Frame.class\" -d /tmp/jv)",
+      "Bash(javap -cp /tmp/jv org.bytedeco.javacv.Frame)"
     ]
   }
 }

@@ -27,6 +27,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <!-- JavaCV：拉取 RTSP 流并用 ffmpeg 解码，为 K230 图像流提供支持 -->
+        <dependency>
+            <groupId>org.bytedeco</groupId>
+            <artifactId>javacv-platform</artifactId>
+            <version>1.5.11</version>
+        </dependency>
     </dependencies>
 
     <!-- 添加 Spring Boot 打包插件 -->

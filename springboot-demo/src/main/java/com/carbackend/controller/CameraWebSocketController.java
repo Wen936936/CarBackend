@@ -14,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 摄像头 WebSocket 接口
- * 暴露 /ws/camera 端点，App 端连接后，RosbridgeClient 收到摄像头图像时会通过本类转发给所有已连接的 App
+ * 暴露 /ws/camera 端点，App 端连接后，RtspStreamService 解码出的实时图像会通过本类转发给所有已连接的 App
  */
 @Configuration
 @EnableWebSocket

@@ -219,26 +219,68 @@ public class CarWebController {
         return "指令 image/process=" + enabled + " 执行成功";
     }
 
+    // 云台方案已废除，改用机械臂方案，接口暂停使用
+    // /**
+    //  * 云台转向接口：POST /car/ptz
+    //  * 接收画面坐标百分比（x、y 均为 0~100），转发给 rosbridge 控制云台
+    //  *
+    //  * @param x 画面横向百分比（0~100）
+    //  * @param y 画面纵向百分比（0~100）
+    //  * @return 执行结果提示
+    //  */
+    // @PostMapping("/ptz")
+    // public String ptz(@RequestParam("x") double x, @RequestParam("y") double y) {
+    //     // 参数范围校验，超出 0~100 视为非法指令
+    //     if (x < 0 || x > 100 || y < 0 || y > 100) {
+    //         throw new CarCommandException("非法的云台坐标：x=" + x + ", y=" + y);
+    //     }
+    //     // 将坐标转发给 rosbridge，真正控制云台
+    //     try {
+    //         rosbridgeClient.sendPtz(x, y);
+    //     } catch (Exception e) {
+    //         System.out.println("【转发rosbridge失败】" + e.getMessage());
+    //     }
+    //     return "指令 ptz 执行成功";
+    // }
+
     /**
-     * 云台转向接口：POST /car/ptz
-     * 接收画面坐标百分比（x、y 均为 0~100），转发给 rosbridge 控制云台
+     * 机械臂控制接口：POST /car/arm
+     * 接收幻尔 LeArm 机械臂 6 个自由度（p1~p5 关节 + base 底盘）的角度值，
+     * 转发给 rosbridge 发布到 /arm/command 话题
      *
-     * @param x 画面横向百分比（0~100）
-     * @param y 画面纵向百分比（0~100）
+     * @param p1   1 号关节角度
+     * @param p2   2 号关节角度
+     * @param p3   3 号关节角度
+     * @param p4   4 号关节角度
+     * @param p5   5 号关节角度
+     * @param base 底盘（电机模式）角度
      * @return 执行结果提示
      */
-    @PostMapping("/ptz")
-    public String ptz(@RequestParam("x") double x, @RequestParam("y") double y) {
-        // 参数范围校验，超出 0~100 视为非法指令
-        if (x < 0 || x > 100 || y < 0 || y > 100) {
-            throw new CarCommandException("非法的云台坐标：x=" + x + ", y=" + y);
-        }
-        // 将坐标转发给 rosbridge，真正控制云台
+    @PostMapping("/arm")
+    public String arm(@RequestParam("p1") int p1,
+                      @RequestParam("p2") int p2,
+                      @RequestParam("p3") int p3,
+                      @RequestParam("p4") int p4,
+                      @RequestParam("p5") int p5,
+                      @RequestParam("base") int base) {
+        // 转发给 rosbridge，真正控制机械臂
         try {
-            rosbridgeClient.sendPtz(x, y);
+            rosbridgeClient.sendArm(p1, p2, p3, p4, p5, base);
         } catch (Exception e) {
             System.out.println("【转发rosbridge失败】" + e.getMessage());
         }
-        return "指令 ptz 执行成功";
+        return "指令 arm 执行成功";
+    }
+
+    /**
+     * 机械臂归位接口：POST /car/arm/reset
+     * 占位实现：STM32 归位接口由负责人后续提供，当前仅返回模拟提示，不做真实逻辑
+     *
+     * @return 模拟执行结果提示
+     */
+    @PostMapping("/arm/reset")
+    public String armReset() {
+        // TODO 待负责人提供 STM32 归位接口后，在此补上真实归位逻辑
+        return "机械臂归位指令已发送（模拟）";
     }
 }

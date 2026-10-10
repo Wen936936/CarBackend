@@ -1,12 +1,8 @@
 package com.carbackend.core;
 
-import com.carbackend.controller.CameraWebSocketController;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -29,13 +25,16 @@ public class RosbridgeClient {
     @Value("${rosbridge.topic.cmd}")
     private String cmdTopic;
 
-    // 摄像头话题，例如 /camera/image_raw
-    @Value("${rosbridge.topic.camera}")
-    private String cameraTopic;
+    // 摄像头图像已改由 RtspStreamService 直接拉取 RTSP 流，不再走 rosbridge 转发
 
-    // 云台控制话题，例如 /ptz/cmd
-    @Value("${rosbridge.topic.ptz}")
-    private String ptzTopic;
+    // 云台方案已废除，改用机械臂方案
+    // // 云台控制话题，例如 /ptz/cmd
+    // @Value("${rosbridge.topic.ptz}")
+    // private String ptzTopic;
+
+    // 机械臂控制话题，例如 /arm/command
+    @Value("${rosbridge.topic.arm}")
+    private String armTopic;
 
     // LED/流水灯控制话题，例如 /led/cmd
     @Value("${rosbridge.topic.led}")
@@ -52,15 +51,8 @@ public class RosbridgeClient {
     // 重连间隔时间（毫秒）
     private static final int RECONNECT_INTERVAL = 3000;
 
-    // 用于解析 rosbridge 推送的 JSON 消息
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     // 真正干活的 WebSocket 客户端对象
     private WebSocketClient client;
-
-    // 摄像头 WebSocket 控制器，收到摄像头话题消息时转发给 App 端
-    @Autowired
-    private CameraWebSocketController cameraWebSocketController;
 
     /**
      * 项目启动时自动连接 rosbridge
@@ -79,25 +71,13 @@ public class RosbridgeClient {
                 @Override
                 public void onOpen(ServerHandshake handshakedata) {
                     System.out.println("【rosbridge连接成功】" + rosbridgeUrl);
-                    // 连接成功后，订阅摄像头话题
-                    subscribeCamera();
                 }
 
                 @Override
                 public void onMessage(String message) {
-                    // 收到摄像头等话题推送的消息，打印日志
+                    // 收到 rosbridge 推送的消息，打印日志即可
+                    // 图像不再从这里转发，改由 RtspStreamService 拉 RTSP 流
                     System.out.println("【收到rosbridge消息】" + message);
-                    // 如果是摄像头话题的消息，把图像转发给已连接的 App 端
-                    try {
-                        JsonNode node = OBJECT_MAPPER.readTree(message);
-                        String topic = node.path("topic").asText("");
-                        if (cameraTopic.equals(topic)) {
-                            String imageBase64 = node.path("msg").asText("");
-                            cameraWebSocketController.broadcastImage(imageBase64);
-                        }
-                    } catch (Exception e) {
-                        System.out.println("【解析rosbridge消息失败】" + e.getMessage());
-                    }
                 }
 
                 @Override
@@ -132,14 +112,6 @@ public class RosbridgeClient {
                 connect();
             }
         }, RECONNECT_INTERVAL);
-    }
-
-    /**
-     * 订阅摄像头话题
-     */
-    private void subscribeCamera() {
-        String subscribeMsg = "{\"op\":\"subscribe\",\"topic\":\"" + cameraTopic + "\"}";
-        send(subscribeMsg);
     }
 
     /**
@@ -181,18 +153,36 @@ public class RosbridgeClient {
                 + "},\"angular\":{\"z\":" + angularZ + "}}}";
     }
 
+    // 云台方案已废除，改用机械臂方案
+    // /**
+    //  * 发送云台转向指令
+    //  * 将 App 传来的 0~100 画面百分比坐标，线性映射为 -90~+90 度，发布到 ptz 话题
+    //  *
+    //  * @param x 画面横向百分比（0~100）
+    //  * @param y 画面纵向百分比（0~100）
+    //  */
+    // public void sendPtz(double x, double y) {
+    //     double pan = (x - 50) * 1.8;
+    //     double tilt = (y - 50) * 1.8;
+    //     String msg = "{\"op\":\"publish\",\"topic\":\"" + ptzTopic + "\",\"msg\":{\"pan\":" + pan
+    //             + ",\"tilt\":" + tilt + "}}";
+    //     send(msg);
+    // }
+
     /**
-     * 发送云台转向指令
-     * 将 App 传来的 0~100 画面百分比坐标，线性映射为 -90~+90 度，发布到 ptz 话题
+     * 发送机械臂控制指令
+     * 将 6 个自由度（p1~p5 关节 + base 底盘）的角度值发布到 /arm/command 话题
      *
-     * @param x 画面横向百分比（0~100）
-     * @param y 画面纵向百分比（0~100）
+     * @param p1   1 号关节角度
+     * @param p2   2 号关节角度
+     * @param p3   3 号关节角度
+     * @param p4   4 号关节角度
+     * @param p5   5 号关节角度
+     * @param base 底盘（电机模式）角度
      */
-    public void sendPtz(double x, double y) {
-        double pan = (x - 50) * 1.8;
-        double tilt = (y - 50) * 1.8;
-        String msg = "{\"op\":\"publish\",\"topic\":\"" + ptzTopic + "\",\"msg\":{\"pan\":" + pan
-                + ",\"tilt\":" + tilt + "}}";
+    public void sendArm(int p1, int p2, int p3, int p4, int p5, int base) {
+        String msg = "{\"op\":\"publish\",\"topic\":\"" + armTopic + "\",\"msg\":{\"position\":["
+                + p1 + "," + p2 + "," + p3 + "," + p4 + "," + p5 + "," + base + "]}}";
         send(msg);
     }
 
