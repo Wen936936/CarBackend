@@ -8,9 +8,11 @@ import com.carbackend.core.LeftCommand;
 import com.carbackend.core.RightCommand;
 import com.carbackend.core.RosbridgeClient;
 import com.carbackend.core.StopCommand;
+import com.carbackend.controller.dto.AiChatRequest;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -277,19 +279,39 @@ public class CarWebController {
 
     /**
      * AI 对话接口：POST /car/ai/chat
-     * 接收用户文字（必填）和图片的 Base64（可选），转发给 rosbridge 发布到 AI 输入话题，
+     * 请求体为 JSON：{"text":"xxx", "image":"xxx"}，image 是图片的 Base64 字符串（可选）。
+     * image 体积较大，必须用 @RequestBody 接收，不能再走 URL 参数，否则会触发
+     * Tomcat 的 "Request header is too large"。转发给 rosbridge 发布到 AI 输入话题，
      * 由树莓派上的 voice-chatbot 节点处理后，回复经 /ws/chat 推送给 App
      *
-     * @param text  用户输入的文字
-     * @param image 图片的 Base64 字符串，可选，不传时为空字符串
+     * @param request 包含 text（必填）和 image（可选）的请求体
      * @return 执行结果提示
      */
     @PostMapping("/ai/chat")
-    public String aiChat(@RequestParam("text") String text,
-                         @RequestParam(value = "image", required = false, defaultValue = "") String image) {
+    public String aiChat(@RequestBody AiChatRequest request) {
+        String text = request.getText();
+        String image = request.getImage() == null ? "" : request.getImage();
         // 转发给 rosbridge，真正的 AI 处理在树莓派侧完成
         try {
             rosbridgeClient.sendAiText(text, image);
+        } catch (Exception e) {
+            System.out.println("【转发rosbridge失败】" + e.getMessage());
+        }
+        return "AI 请求已发送";
+    }
+
+    /**
+     * AI 纯文字对话接口（兼容旧版）：POST /car/ai/chat/text?text=xxx
+     * 只接收文字，不带图片，方便前端纯文字对话场景沿用旧的 @RequestParam 方式调用
+     *
+     * @param text 用户输入的文字
+     * @return 执行结果提示
+     */
+    @PostMapping("/ai/chat/text")
+    public String aiChatText(@RequestParam("text") String text) {
+        // 转发给 rosbridge，image 固定传空字符串
+        try {
+            rosbridgeClient.sendAiText(text, "");
         } catch (Exception e) {
             System.out.println("【转发rosbridge失败】" + e.getMessage());
         }
