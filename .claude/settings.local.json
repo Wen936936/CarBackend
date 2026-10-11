@@ -35,7 +35,8 @@
       "Bash(xxd)",
       "Bash(javap -p -c target/classes/com/carbackend/controller/CarWebController.class)",
       "Bash(ls .mvn .mvn/wrapper)",
-      "Bash(ls mvnw* springboot-demo/mvnw*)"
+      "Bash(ls mvnw* springboot-demo/mvnw*)",
+      "Bash(./mvnw -q compile)"
     ]
   }
 }

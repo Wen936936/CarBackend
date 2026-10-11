@@ -263,6 +263,9 @@ public class CarWebController {
                       @RequestParam("p4") int p4,
                       @RequestParam("p5") int p5,
                       @RequestParam("base") int base) {
+        // 打印收到的参数，方便调试
+        System.out.println("【收到机械臂指令】p1=" + p1 + ", p2=" + p2 + ", p3=" + p3
+                + ", p4=" + p4 + ", p5=" + p5 + ", base=" + base);
         // 转发给 rosbridge，真正控制机械臂
         try {
             rosbridgeClient.sendArm(p1, p2, p3, p4, p5, base);

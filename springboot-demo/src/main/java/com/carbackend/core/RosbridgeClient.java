@@ -100,6 +100,8 @@ public class RosbridgeClient {
                     // 图像不再从这里转发，改由 RtspStreamService 拉 RTSP 流
                     if (isAiReply(message)) {
                         chatWebSocketController.broadcastMessage(message);
+                        // AI 回复里如果带了 action 字段，顺手执行对应的硬件指令
+                        handleAiAction(message);
                     } else {
                         System.out.println("【收到rosbridge消息】" + message);
                     }
@@ -298,6 +300,27 @@ public class RosbridgeClient {
                     && aiReplyTopic.equals(node.path("topic").asText());
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /**
+     * 检查 AI 回复中的 action 字段，不为空时自动执行对应的硬件指令
+     * action 为空只代表这条回复是纯聊天内容，不需要控制小车
+     * 执行指令可能因未知指令抛出 CarCommandException，这里统一 try-catch，避免影响消息转发
+     *
+     * @param message rosbridge 推送的 AI 回复原始 JSON
+     */
+    private void handleAiAction(String message) {
+        try {
+            JsonNode node = objectMapper.readTree(message);
+            String action = node.path("msg").path("action").asText("");
+            if (!action.isEmpty()) {
+                System.out.println("【AI回复触发指令】action=" + action);
+                sendCommand(action);
+            }
+        } catch (Exception e) {
+            // 指令未知或解析失败都不应该影响 AI 对话流程，只打印日志
+            System.out.println("【AI回复指令执行失败】" + e.getMessage());
         }
     }
 
