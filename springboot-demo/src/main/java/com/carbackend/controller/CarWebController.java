@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * 小车 Web 控制器
@@ -49,7 +50,8 @@ public class CarWebController {
     private final Map<String, CarCommand> commandMap = new HashMap<>();
 
     // 已执行指令的历史记录（内存存储，不使用数据库）
-    private final List<String> history = new ArrayList<>();
+    // App 按住时会以 5Hz 左右重复调用，多个请求线程会同时写，必须用并发集合
+    private final List<String> history = new CopyOnWriteArrayList<>();
 
     /**
      * 构造方法：初始化指令映射表
@@ -64,7 +66,11 @@ public class CarWebController {
 
     /**
      * 控制接口：GET /car/command?action=xxx
-     * 接收 action 参数，从映射表中查找并执行对应指令
+     * 接收 action 参数，从映射表中查找并执行对应指令。
+     *
+     * 底盘速度由后端以 20Hz 持续发布（驱动侧 0.5 秒收不到就按零速处理），
+     * 本接口只负责设置目标速度并续期。App 需在按住期间以 >= 2Hz 重复调用同一指令，
+     * 松手后调用 stop，或停止调用等待自动停车（0.8 秒）。
      *
      * @param action 指令名称
      * @return 执行结果提示
@@ -81,7 +87,10 @@ public class CarWebController {
         command.execute();
         // 将指令转发给 rosbridge，真正控制小车
         try {
-            rosbridgeClient.sendCommand(action);
+            rosbridgeClient.sendCommand(action, "app");
+        } catch (CarCommandException e) {
+            // 未知指令等业务异常向上抛，交给统一异常处理返回提示
+            throw e;
         } catch (Exception e) {
             System.out.println("【转发rosbridge失败】" + e.getMessage());
         }
@@ -320,14 +329,16 @@ public class CarWebController {
 
     /**
      * 机械臂归位接口：POST /car/arm/reset
-     * 占位实现：STM32 归位接口由负责人后续提供，当前仅返回模拟提示，不做真实逻辑
+     * 转发树莓派侧的 /arm/rehome 服务（std_srvs/srv/Trigger）。
+     * 固件走的是与上电同一套流程：五个位置关节回 ARM_RESET_POSE，底座重新锚定并回正到车头方向，
+     * 全程约 5~15 秒，期间机械臂会动，App 端需要显示"归位中"并禁止重复触发。
      *
-     * @return 模拟执行结果提示
+     * @return 服务返回的提示信息
      */
     @PostMapping("/arm/reset")
     public String armReset() {
-        // TODO 待负责人提供 STM32 归位接口后，在此补上真实归位逻辑
-        return "机械臂归位指令已发送（模拟）";
+        System.out.println("【收到机械臂归位指令】");
+        return rosbridgeClient.sendArmRehome();
     }
 
     // 假地图图片路径，纯模拟阶段用；图片不存在时自动退化为 8x8 数组

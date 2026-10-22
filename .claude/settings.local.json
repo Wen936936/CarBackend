@@ -36,7 +36,16 @@
       "Bash(javap -p -c target/classes/com/carbackend/controller/CarWebController.class)",
       "Bash(ls .mvn .mvn/wrapper)",
       "Bash(ls mvnw* springboot-demo/mvnw*)",
-      "Bash(./mvnw -q compile)"
+      "Bash(./mvnw -q compile)",
+      "Bash(gh repo *)",
+      "Bash(git ls-remote *)",
+      "Bash(echo \"RC=$?\")",
+      "Bash(~/.m2/wrapper/dists/apache-maven-3.9.16-bin/5grr65jo27hi51sujmtcldfovl/apache-maven-3.9.16/bin/mvn -o -q compile)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(~/.m2/wrapper/dists/apache-maven-3.9.16-bin/5grr65jo27hi51sujmtcldfovl/apache-maven-3.9.16/bin/mvn -q compile)",
+      "Bash(~/.m2/wrapper/dists/apache-maven-3.9.16-bin/5grr65jo27hi51sujmtcldfovl/apache-maven-3.9.16/bin/mvn compile *)",
+      "Bash(ls src/main/java/com/carbackend/fakeros/)",
+      "Bash(ls src/test)"
     ]
   }
 }
