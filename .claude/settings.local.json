@@ -45,7 +45,15 @@
       "Bash(~/.m2/wrapper/dists/apache-maven-3.9.16-bin/5grr65jo27hi51sujmtcldfovl/apache-maven-3.9.16/bin/mvn -q compile)",
       "Bash(~/.m2/wrapper/dists/apache-maven-3.9.16-bin/5grr65jo27hi51sujmtcldfovl/apache-maven-3.9.16/bin/mvn compile *)",
       "Bash(ls src/main/java/com/carbackend/fakeros/)",
-      "Bash(ls src/test)"
+      "Bash(ls src/test)",
+      "Bash(mkdir -p /tmp/fakecheck)",
+      "Bash(javac -encoding UTF-8 -cp \"C:/Users/83588/.m2/repository/org/java-websocket/Java-WebSocket/1.5.4/Java-WebSocket-1.5.4.jar\" -d /tmp/fakecheck src/main/java/com/carbackend/fakeros/FakeRosbridgeServer.java)",
+      "Bash(javac -encoding UTF-8 -cp 'C:/Users/83588/.m2/repository/org/java-websocket/Java-WebSocket/1.5.4/Java-WebSocket-1.5.4.jar;/tmp/fakecheck' -d /tmp/fakecheck /tmp/fakecheck/RehomeTest.java)",
+      "Bash(java -cp 'C:/Users/83588/.m2/repository/org/java-websocket/Java-WebSocket/1.5.4/Java-WebSocket-1.5.4.jar;C:/Users/83588/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar;/tmp/fakecheck' RehomeTest)",
+      "Read(//tmp/**)",
+      "Read(//tmp/fakecheck/com/carbackend/**)",
+      "Bash(javac -encoding UTF-8 -cp 'C:/Users/83588/.m2/repository/org/java-websocket/Java-WebSocket/1.5.4/Java-WebSocket-1.5.4.jar;C:/Users/83588/AppData/Local/Temp/fakecheck' -d C:/Users/83588/AppData/Local/Temp/fakecheck C:/Users/83588/AppData/Local/Temp/fakecheck/RehomeTest.java)",
+      "Bash(java -cp 'C:/Users/83588/.m2/repository/org/java-websocket/Java-WebSocket/1.5.4/Java-WebSocket-1.5.4.jar;C:/Users/83588/.m2/repository/org/slf4j/slf4j-api/2.0.13/slf4j-api-2.0.13.jar;C:/Users/83588/AppData/Local/Temp/fakecheck' RehomeTest)"
     ]
   }
 }

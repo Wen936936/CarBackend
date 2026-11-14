@@ -51,6 +51,32 @@ public class FakeRosbridgeServer extends WebSocketServer {
         if (message.contains("/ai/input")) {
             replyAiMessage(conn, message);
         }
+        if (Pattern.compile("\"op\"\\s*:\\s*\"call_service\"").matcher(message).find()
+                && message.contains("/arm/rehome")) {
+            replyRehomeService(conn, message);
+        }
+    }
+
+    /**
+     * 模拟 /arm/rehome 服务调用：立刻返回 service_response，让后端能匹配上 id
+     * 消息格式：{"op":"service_response","id":<请求id>,"result":true,"values":{"success":true,"message":"归位成功"}}
+     */
+    private void replyRehomeService(WebSocket conn, String message) {
+        try {
+            // id 可能是数字或字符串，原样取出来回填，保证后端能按 id 匹配
+            Matcher matcher = Pattern.compile("\"id\"\\s*:\\s*(\"[^\"]*\"|[0-9]+)").matcher(message);
+            if (!matcher.find()) {
+                System.out.println("【归位回复失败】请求中没有 id 字段");
+                return;
+            }
+            String id = matcher.group(1);
+            String reply = "{\"op\":\"service_response\",\"id\":" + id
+                    + ",\"result\":true,\"values\":{\"success\":true,\"message\":\"归位成功\"}}";
+            conn.send(reply);
+            System.out.println("【归位回复】" + reply);
+        } catch (Exception e) {
+            System.out.println("【归位回复处理失败】" + e.getMessage());
+        }
     }
 
     /**
